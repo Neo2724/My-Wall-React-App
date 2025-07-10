@@ -29,12 +29,12 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}> 
         <div className="min-h-screen flex flex-col">
           {/* Header */}
-          <header className="bg-blue-600 text-white h-12 flex items-center px-6 font-semibold text-lg shadow-sm">
+          <header className="bg-blue-600 text-white h-12 flex items-center px-6 font-semibold text-lg shadow-sm fixed top-0 left-0 w-full z-30">
             wall
           </header>
-          <div className="flex flex-1">
+          <div className="flex flex-1 pt-12">
             {/* Sidebar */}
-            <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 p-6 gap-6">
+            <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 p-6 gap-6 fixed h-full top-12 left-0 z-20 overflow-y-auto">
               <div className="flex flex-col items-center">
                 <Image
                   src="/profile.jpg"
@@ -57,7 +57,7 @@ export default function RootLayout({
               </div>
             </aside>
             {/* Main Content */}
-            <main className="flex-1 bg-gray-50 min-h-screen flex flex-col items-center py-8 px-2 md:px-0">
+            <main className="flex-1 bg-gray-50 min-h-screen flex flex-col items-center py-8 px-2 md:px-0 md:ml-72">
               {children}
             </main>
           </div>
