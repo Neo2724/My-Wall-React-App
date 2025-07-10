@@ -23,16 +23,17 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch messages from Supabase
+  const fetchMessages = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error && data) setMessages(data as Message[]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchMessages = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) setMessages(data as Message[]);
-      setLoading(false);
-    };
     fetchMessages();
 
     // Subscribe to real-time updates
@@ -41,7 +42,7 @@ export default function Home() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: TABLE },
-        (payload) => {
+        () => {
           fetchMessages();
         }
       )
@@ -58,7 +59,6 @@ export default function Home() {
     }
   };
 
-  // Handle posting a new message
   const handleShare = async () => {
     if (!input.trim()) return;
 
@@ -66,7 +66,7 @@ export default function Home() {
     if (photo) {
       const fileExt = photo.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const { data, error: uploadError } = await supabase
+      const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from('wall-photos')
         .upload(fileName, photo);
@@ -92,6 +92,8 @@ export default function Home() {
       setInput("");
       setPhoto(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      // Immediately fetch messages after posting
+      fetchMessages();
     }
   };
 
@@ -99,14 +101,6 @@ export default function Home() {
     <div className="w-full max-w-2xl">
       {/* Post Input */}
       <Card className="mb-6 p-4 flex flex-col gap-2 shadow-sm">
-        <textarea
-          className="w-full border rounded-md p-3 resize-none text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          rows={2}
-          maxLength={280}
-          placeholder="What's on your mind?"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-        />
         <div className="flex items-center gap-2 mb-2">
           <input
             type="file"
@@ -136,6 +130,14 @@ export default function Home() {
             className="mt-2 rounded max-h-24"
           />
         )}
+        <textarea
+          className="w-full border rounded-md p-3 resize-none text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          rows={2}
+          maxLength={280}
+          placeholder="What's on your mind?"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
         <div className="flex justify-between items-center text-xs text-gray-400">
           <span>{280 - input.length} characters remaining</span>
           <Button
@@ -155,7 +157,6 @@ export default function Home() {
           messages.map((post: Message) => (
             <Card key={post.id} className="p-4 flex flex-col gap-1 shadow-sm">
               <div className="font-semibold text-sm">{post.name}</div>
-              <div className="text-base text-gray-800 break-words">{post.text}</div>
               {post.photo_url && (
                 <img
                   src={post.photo_url}
@@ -163,6 +164,7 @@ export default function Home() {
                   className="rounded-lg max-w-xs mb-2"
                 />
               )}
+              <div className="text-base text-gray-800 break-words">{post.text}</div>
               <div className="text-xs text-gray-400 mt-1">
                 {new Date(post.created_at).toLocaleString()}
               </div>
